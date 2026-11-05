@@ -5,60 +5,84 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Welford’s Recurrences and Sampling Statistics</title>
 <style>
-:root{--bg:#fafaf8;--fg:#1d1d1b;--mut:#6b6b66;--card:#fff;--code:#f1f0ec;--bd:#dddbd3;--ac:#2f5fd0;--ac-fg:#fff;
+:root{--bg:#f6f6f3;--fg:#1c1d22;--mut:#6a6d78;--card:#ffffff;--code:#14161c;--codefg:#e6e8ef;--bd:#e3e3dd;--ac:#4f46e5;--ac2:#eef0ff;--ok:#0f8a5f;
+--c-com:#7d8597;--c-kw:#c792ea;--c-num:#f78c6c;--c-fn:#82aaff;
 box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#17171a;--fg:#ececea;--mut:#9a9a94;--card:#1f1f23;--code:#26262b;--bd:#35353b;--ac:#7aa2ff;--ac-fg:#101014}}
-:root[data-theme="dark"]{--bg:#17171a;--fg:#ececea;--mut:#9a9a94;--card:#1f1f23;--code:#26262b;--bd:#35353b;--ac:#7aa2ff;--ac-fg:#101014}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101116;--fg:#e9eaf0;--mut:#9a9eac;--card:#181a21;--code:#0b0c10;--bd:#2a2d37;--ac:#8b84ff;--ac2:#22244a;--ok:#4fd1a1}}
+:root[data-theme="dark"]{--bg:#101116;--fg:#e9eaf0;--mut:#9a9eac;--card:#181a21;--code:#0b0c10;--bd:#2a2d37;--ac:#8b84ff;--ac2:#22244a;--ok:#4fd1a1}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
-body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
-main{max-width:860px;margin:0 auto;padding:24px 16px 56px}
-h1{font-size:1.6rem;margin:.2em 0 .6em}
-h2{font-size:1.25rem;margin:1.8em 0 .5em;border-bottom:1px solid var(--bd);padding-bottom:.25em}
-p{margin:.5em 0}
-pre{background:var(--code);border:1px solid var(--bd);border-radius:8px;padding:12px 14px;overflow-x:auto;font:13px/1.5 ui-monospace,Menlo,Consolas,monospace;margin:.7em 0}
-.card{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:14px;margin:1em 0}
-label{display:inline-block;margin:4px 12px 4px 0;color:var(--mut);font-size:.9rem}
-input{background:var(--bg);color:var(--fg);border:1px solid var(--bd);border-radius:6px;padding:6px 8px;font:inherit;width:6.5em}
-input.wide{width:16em}
-button{background:var(--ac);color:var(--ac-fg);border:0;border-radius:6px;padding:8px 16px;font:inherit;font-weight:600;cursor:pointer}
-button:disabled{opacity:.6}
-.scroll{overflow-x:auto}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 "Inter",system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+main{max-width:880px;margin:0 auto;padding:0 18px 64px}
+header{padding:48px 0 18px}
+.eyebrow{font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ac);font-weight:700}
+h1{font-size:clamp(1.9rem,5vw,2.7rem);line-height:1.12;margin:.25em 0 .35em;letter-spacing:-.02em}
+.lead{color:var(--mut);max-width:60ch;margin:0}
+section{margin-top:44px}
+h2{display:flex;align-items:center;gap:12px;font-size:1.35rem;margin:0 0 16px;letter-spacing:-.01em}
+.badge{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:10px;background:var(--ac);color:#fff;font-weight:700;font-size:.95rem;flex:none}
+h3{font-size:.8rem;text-transform:uppercase;letter-spacing:.1em;color:var(--mut);margin:26px 0 10px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:18px 20px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+ol.steps{list-style:none;counter-reset:s;margin:0;padding:0;display:grid;gap:12px}
+ol.steps li{counter-increment:s;position:relative;padding-left:40px}
+ol.steps li::before{content:counter(s);position:absolute;left:0;top:1px;width:26px;height:26px;border-radius:50%;background:var(--ac2);color:var(--ac);font-weight:700;font-size:.82rem;display:grid;place-items:center}
+.eq{display:block;margin:6px 0 0;padding:8px 12px;background:var(--ac2);border-radius:8px;font:500 .98rem/1.5 "Cambria","Georgia",serif;font-style:italic;overflow-x:auto;white-space:nowrap}
+.eq b{font-style:normal;color:var(--ac)}
+.final{border:2px solid var(--ac);background:var(--card)}
+.final .eq{background:var(--ac2)}
+pre{margin:0;background:var(--code);color:var(--codefg);border-radius:12px;padding:16px 18px;overflow-x:auto;font:13px/1.65 ui-monospace,"SF Mono",Menlo,Consolas,monospace;border:1px solid var(--bd)}
+.com{color:var(--c-com);font-style:italic}.kw{color:var(--c-kw)}.num{color:var(--c-num)}.fn{color:var(--c-fn)}
+.tag{display:inline-block;font-size:.72rem;font-weight:700;color:var(--ac);background:var(--ac2);border-radius:999px;padding:2px 10px;margin-bottom:8px;letter-spacing:.04em}
+.params{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:14px}
+.params label{display:grid;gap:4px;font-size:.78rem;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+input{background:var(--bg);color:var(--fg);border:1px solid var(--bd);border-radius:8px;padding:9px 11px;font:500 .95rem inherit;font-family:inherit;width:7em}
+input.wide{width:17em}
+input:focus{outline:2px solid var(--ac);outline-offset:1px}
+button{background:var(--ac);color:#fff;border:0;border-radius:10px;padding:10px 22px;font:700 .95rem inherit;font-family:inherit;cursor:pointer;transition:transform .08s}
+button:active{transform:scale(.97)}button:disabled{opacity:.55;cursor:default}
+.status{color:var(--mut);font-size:.88rem;margin:0 0 10px;min-height:1.4em}
+.scroll{overflow-x:auto;border:1px solid var(--bd);border-radius:12px}
 table{border-collapse:collapse;width:100%;font-size:.88rem;font-variant-numeric:tabular-nums}
-th,td{border-bottom:1px solid var(--bd);padding:6px 8px;text-align:right;white-space:nowrap}
-th:first-child,td:first-child{text-align:left}
-th{color:var(--mut);font-weight:600}
-.note{color:var(--mut);font-size:.9rem}
+th,td{padding:9px 12px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--bd)}
+tbody tr:last-child td{border-bottom:0}
+th{background:var(--ac2);color:var(--ac);font-size:.74rem;text-transform:uppercase;letter-spacing:.06em}
+th:first-child,td:first-child{text-align:left;font-weight:700}
+td.th{color:var(--mut)}td.ok{color:var(--ok);font-weight:600}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.grid .card h4{margin:0 0 6px;font-size:1rem}
+.grid .card p{margin:0;color:var(--mut);font-size:.93rem}
+.grid .card .n{color:var(--ac);font-weight:800;font-size:.8rem;letter-spacing:.1em}
+footer{margin-top:48px;color:var(--mut);font-size:.82rem;text-align:center}
 </style>
 </head>
 <body>
 <main>
-<h1>Welford’s Recurrences and Sampling Statistics</h1>
+<header>
+  <div class="eyebrow">Statistics · Online algorithms</div>
+  <h1>Welford’s Recurrences and Sampling Statistics</h1>
+  <p class="lead">Derive the one-pass update for the sum of squares and the variance, then test how sample means and variances behave across many simulated hackers.</p>
+</header>
 
-<h2>Exercise 1 – Welford’s Recurrence Formulas</h2>
-<pre><code>/*  DERIVATION
-    M_k  = mean of the first k values,   SS_k = sum_{i=1..k} (x_i - M_k)^2
-    Knuth:  M_k = M_{k-1} + (x_k - M_{k-1}) / k
-    Let d = x_k - M_{k-1}, so M_k = M_{k-1} + d/k.
+<section>
+  <h2><span class="badge">1</span>Exercise 1 – Welford’s Recurrence Formulas</h2>
+  <div class="card">
+    <p style="margin:0 0 14px">Let <i>M<sub>k</sub></i> be the mean of the first <i>k</i> values and <i>SS<sub>k</sub></i> = Σ(<i>x<sub>i</sub></i> − <i>M<sub>k</sub></i>)². Start from Knuth’s mean update and put <i>d</i> = <i>x<sub>k</sub></i> − <i>M<sub>k−1</sub></i>.</p>
+    <ol class="steps">
+      <li><b>Knuth’s mean</b><span class="eq"><b>M<sub>k</sub> = M<sub>k−1</sub> + d / k</b></span></li>
+      <li><b>Rewrite SS</b> using <i>SS<sub>k</sub></i> = Σx² − k·M<sub>k</sub>²<span class="eq">SS<sub>k</sub> − SS<sub>k−1</sub> = x<sub>k</sub>² − k·M<sub>k</sub>² + (k−1)·M<sub>k−1</sub>²</span></li>
+      <li><b>Expand</b> k·M<sub>k</sub>² = k·M<sub>k−1</sub>² + 2·M<sub>k−1</sub>·d + d²/k<span class="eq">SS<sub>k</sub> − SS<sub>k−1</sub> = x<sub>k</sub>² − M<sub>k−1</sub>² − 2·M<sub>k−1</sub>·d − d²/k</span></li>
+      <li><b>Simplify</b> with x<sub>k</sub>² − M<sub>k−1</sub>² = d² + 2·M<sub>k−1</sub>·d<span class="eq">SS<sub>k</sub> − SS<sub>k−1</sub> = d² − d²/k = d²·(k−1)/k</span></li>
+      <li><b>Use</b> x<sub>k</sub> − M<sub>k</sub> = d·(k−1)/k, so the increment equals d·(x<sub>k</sub> − M<sub>k</sub>).</li>
+    </ol>
+    <div class="card final" style="margin-top:16px">
+      <span class="tag">RESULT</span>
+      <span class="eq"><b>SS<sub>k</sub> = SS<sub>k−1</sub> + d·(x<sub>k</sub> − M<sub>k</sub>)</b> &nbsp;&nbsp;(M<sub>0</sub> = SS<sub>0</sub> = 0)</span>
+      <span class="eq"><b>s²<sub>k</sub> = ((k−2)/(k−1))·s²<sub>k−1</sub> + d²/k</b> &nbsp;&nbsp;for k ≥ 2, with s²<sub>k</sub> = SS<sub>k</sub>/(k−1)</span>
+    </div>
+  </div>
 
-    Use  SS_k = sum(x_i^2) - k*M_k^2.  Then
-      SS_k - SS_{k-1} = x_k^2 - k*M_k^2 + (k-1)*M_{k-1}^2
-
-    Expand  k*M_k^2 = k*M_{k-1}^2 + 2*M_{k-1}*d + d^2/k, so
-      SS_k - SS_{k-1} = x_k^2 - M_{k-1}^2 - 2*M_{k-1}*d - d^2/k
-
-    Since x_k^2 - M_{k-1}^2 = d*(d + 2*M_{k-1}) = d^2 + 2*M_{k-1}*d :
-      SS_k - SS_{k-1} = d^2 - d^2/k = d^2 * (k-1)/k
-
-    Also x_k - M_k = d - d/k = d*(k-1)/k, hence
-
-      SS_k = SS_{k-1} + d * (x_k - M_k)              (M_0 = SS_0 = 0)
-
-    Variance (unbiased) s2_k = SS_k / (k-1), which obeys
-      s2_k = ((k-2)/(k-1)) * s2_{k-1} + d^2 / k       for k >= 2
-    Population version: SS_k / k.
-*/
-
-function welford(xs) {
+  <h3>Code – three lines of core logic</h3>
+<pre><code>function welford(xs) {
   let M = 0, SS = 0, k = 0;
   for (const x of xs) {
     k++;
@@ -68,18 +92,20 @@ function welford(xs) {
   }
   return [M, SS / (k - 1)]; // sample mean, unbiased sample variance
 }</code></pre>
+</section>
 
-<h2>Exercise 2 – Sampling Mean and Variance</h2>
-<pre><code>// Scores ~ discrete uniform on {0, 1, ..., 10}
-// mu     = 5
-// sigma2 = (11^2 - 1) / 12 = 10
-// mu4    = 178   (fourth central moment)
-//
-// m hackers, each attacking n systems -> a trajectory of n scores.
-// Per hacker: Welford gives (sample mean, sample variance).
-// Across hackers: average the means and the variances, compare to mu, sigma2.
+<section>
+  <h2><span class="badge">2</span>Exercise 2 – Sampling Mean and Variance</h2>
+  <div class="card">
+    Scores are drawn from a <b>discrete uniform</b> distribution on {0, 1, …, 10}, so
+    <span class="eq" style="display:inline-block;margin:0 4px"><b>μ = 5</b></span>
+    <span class="eq" style="display:inline-block;margin:0 4px"><b>σ² = (11² − 1)/12 = 10</b></span>
+    <span class="eq" style="display:inline-block;margin:0 4px"><b>μ₄ = 178</b></span>
+    Each of <i>m</i> hackers attacks <i>n</i> systems and gets <i>n</i> scores. Welford gives each hacker’s sample mean and variance, then we average across hackers.
+  </div>
 
-const MU = 5, SIGMA2 = 10, MU4 = 178;
+  <h3>Code</h3>
+<pre><code>const MU = 5, SIGMA2 = 10, MU4 = 178;
 
 function mulberry32(a) {            // small seeded RNG
   return () => {
@@ -92,68 +118,64 @@ function mulberry32(a) {            // small seeded RNG
 
 function experiment(n, m, rand) {
   const means = [], vars = [];
-  for (let h = 0; h < m; h++) {
-    let M = 0, SS = 0;                              // inline Welford
-    for (let k = 1; k <= n; k++) {
-      const x = Math.floor(rand() * 11);            // score in 0..10
+  for (let h = 0; h &lt; m; h++) {
+    let M = 0, SS = 0;                     // inline Welford
+    for (let k = 1; k &lt;= n; k++) {
+      const x = Math.floor(rand() * 11);   // score in 0..10
       const d = x - M; M += d / k; SS += d * (x - M);
     }
     means.push(M); vars.push(SS / (n - 1));
   }
-  const avg = a => a.reduce((s, v) => s + v, 0) / a.length;
-  const sd  = a => { const mu = avg(a); return Math.sqrt(avg(a.map(v => (v - mu) ** 2))); };
+  const avg = a =&gt; a.reduce((s, v) =&gt; s + v, 0) / a.length;
+  const sd  = a =&gt; { const mu = avg(a); return Math.sqrt(avg(a.map(v =&gt; (v - mu) ** 2))); };
   return {
     n, avgMean: avg(means), avgVar: avg(vars), sdMean: sd(means), sdVar: sd(vars),
     thMean: Math.sqrt(SIGMA2 / n),                                  // sigma / sqrt(n)
-    thVar:  Math.sqrt((MU4 - SIGMA2 ** 2 * (n - 3) / (n - 1)) / n)  // sqrt(Var(s2))
+    thVar:  Math.sqrt((MU4 - SIGMA2 ** 2 * (n - 3) / (n - 1)) / n)  // sd of s2
   };
 }</code></pre>
 
-<div class="card">
-  <strong>Run the experiment</strong><br>
-  <label>m (hackers) <input id="m" type="number" value="1000" min="2" max="5000"></label>
-  <label>n values <input id="ns" class="wide" value="5, 10, 50, 100, 1000, 10000"></label>
-  <label>seed <input id="seed" type="number" value="0"></label>
-  <button id="run">Run</button>
-  <p class="note" id="status">Theory: μ = 5, σ² = 10.</p>
-  <div class="scroll">
-  <table id="out" hidden>
-    <thead><tr><th>n</th><th>avg mean</th><th>avg var</th><th>std of means</th><th>σ/√n</th><th>std of vars</th><th>theory</th></tr></thead>
-    <tbody></tbody>
-  </table>
+  <h3>Run it</h3>
+  <div class="card">
+    <div class="params">
+      <label>Hackers (m)<input id="m" type="number" value="1000" min="2" max="5000"></label>
+      <label>Systems (n values)<input id="ns" class="wide" value="5, 10, 50, 100, 1000, 10000"></label>
+      <label>Seed<input id="seed" type="number" value="0"></label>
+      <button id="run">Run experiment</button>
+    </div>
+    <p class="status" id="status">Theory: μ = 5, σ² = 10. Press run to simulate.</p>
+    <div class="scroll">
+    <table id="out" hidden>
+      <thead><tr><th>n</th><th>Avg mean</th><th>Avg var</th><th>Std of means</th><th>σ/√n</th><th>Std of vars</th><th>Theory</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    </div>
   </div>
-</div>
+</section>
 
-<h2>Conclusions</h2>
-<pre><code>/*
-1. Both estimators are unbiased: E[sample mean] = mu, E[sample variance] = sigma2.
-   The average over hackers approaches mu = 5 and sigma2 = 10 for every n, even n = 5.
-   This relies on dividing by n-1 (Bessel's correction); dividing by n would give
-   sigma2 * (n-1)/n on average, which is visibly too low for small n.
-
-2. Inference: mu and sigma2 are normally unknown. This result justifies using the
-   sample mean and variance of ONE trajectory as estimates of them. Each hacker is
-   one possible sample whose statistics scatter around the truth with no systematic
-   error. This underlies confidence intervals, t-tests and the standard error s/sqrt(n).
-
-3. Effect of n:
-   - Var(sample mean) = sigma2 / n          -> spread shrinks like 1/sqrt(n)
-   - Var(sample var)  = (mu4 - sigma2^2 * (n-3)/(n-1)) / n  -> also order 1/n
-   Both estimators are consistent. Variance estimates are noisier than mean
-   estimates at the same n because the constant depends on the fourth moment.
-   By the CLT the sample mean also becomes approximately normal as n grows.
-
-4. m vs n: increasing m only sharpens the average over hackers (the estimator's
-   expectation, already correct). Increasing n improves each individual estimate.
-
-5. Why Welford: one pass, O(1) memory, and no catastrophic cancellation as in the
-   naive sum(x^2) - n*mean^2 formula.
-*/</code></pre>
+<section>
+  <h2><span class="badge">3</span>Conclusions</h2>
+  <div class="grid">
+    <div class="card"><div class="n">01</div><h4>Both estimators are unbiased</h4><p>E[x̄] = μ and E[s²] = σ². The averages over hackers land on 5 and 10 even for n = 5. This needs the n − 1 divisor; dividing by n gives σ²(n−1)/n, too low for small n.</p></div>
+    <div class="card"><div class="n">02</div><h4>Why it matters for inference</h4><p>μ and σ² are usually unknown. This justifies estimating them from a single trajectory, and underlies confidence intervals, t-tests and the standard error s/√n.</p></div>
+    <div class="card"><div class="n">03</div><h4>Larger n, less variability</h4><p>Var(x̄) = σ²/n, so the spread shrinks like 1/√n. Var(s²) is also of order 1/n, with a constant that depends on μ₄, so variance estimates are noisier than mean estimates.</p></div>
+    <div class="card"><div class="n">04</div><h4>m versus n</h4><p>Raising m only sharpens the average over hackers, which is already centred on the truth. Raising n is what improves each individual estimate (consistency, plus CLT normality of x̄).</p></div>
+    <div class="card"><div class="n">05</div><h4>Why Welford</h4><p>One pass, O(1) memory, and no catastrophic cancellation like the naive Σx² − n·x̄² formula.</p></div>
+  </div>
+</section>
+<footer>Everything runs locally in your browser.</footer>
 </main>
 
 <script>
-function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+// Lightweight syntax highlighting for the code blocks
+document.querySelectorAll('pre code').forEach(function(el){
+  var s=el.textContent.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  el.innerHTML=s.replace(/(\/\/.*)|\b(const|let|function|return|for|of)\b|\b(\d[\d.]*)\b|\b(Math\.\w+|welford|experiment|mulberry32)\b/g,
+    function(m,c,k,n,f){return c?'<span class="com">'+c+'</span>':k?'<span class="kw">'+k+'</span>':n?'<span class="num">'+n+'</span>':'<span class="fn">'+f+'</span>';});
+});
+
 var SIGMA2=10, MU4=178;
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
 function experiment(n,m,rand){
   var means=[],vars=[];
   for(var h=0;h<m;h++){
@@ -175,11 +197,11 @@ document.getElementById('run').addEventListener('click',function(){
   document.getElementById('out').hidden=false;
   var i=0;
   (function step(){
-    if(i>=ns.length){btn.disabled=false;st.textContent='Done. Theory: μ = 5, σ² = 10.';return;}
+    if(i>=ns.length){btn.disabled=false;st.textContent='Done. Theory: μ = 5, σ² = 10. Spreads should track the theory columns.';return;}
     var r=experiment(ns[i++],m,rand);
+    var cells=[[r.n,''],[r.avgMean.toFixed(4),'ok'],[r.avgVar.toFixed(4),'ok'],[r.sdMean.toFixed(4),''],[r.thMean.toFixed(4),'th'],[r.sdVar.toFixed(4),''],[r.thVar.toFixed(4),'th']];
     var tr=document.createElement('tr');
-    tr.innerHTML=[r.n,r.avgMean.toFixed(4),r.avgVar.toFixed(4),r.sdMean.toFixed(4),r.thMean.toFixed(4),r.sdVar.toFixed(4),r.thVar.toFixed(4)]
-      .map(function(v){return '<td>'+v+'</td>';}).join('');
+    tr.innerHTML=cells.map(function(c){return '<td class="'+c[1]+'">'+c[0]+'</td>';}).join('');
     tb.appendChild(tr);
     setTimeout(step,0);
   })();
